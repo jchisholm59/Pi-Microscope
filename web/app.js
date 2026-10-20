@@ -409,7 +409,7 @@ $('fullscreen').onclick = () => (document.fullscreenElement ? document.exitFulls
 
 // ---- tools ------------------------------------------------------------------------------------------------------------
 const HINTS = {
-  pan: 'Wheel to zoom, drag to move around, double-click to zoom in',
+  pan: 'Wheel to zoom, drag to move around, double-click to zoom in, right-click to zoom out',
   line: 'Drag from one end to the other', poly: 'Click each point, double-click to finish', rect: 'Drag a rectangle',
   circle: 'Drag from the centre to the edge', angle: 'Click one arm, the vertex, then the other arm', count: 'Click each thing to count; switch tool when done',
   text: 'Click where the label goes', cal: 'Draw a line along the ruler scale (or across a known distance)',
@@ -547,6 +547,17 @@ cOv.addEventListener('dblclick', (e) => {
     afterEdit();
   } else if (tool === 'pan') zoomAt(evCanvas(e), 0.5);
 });
+// right-click zooms out (any tool), like double-click zooms in
+cOv.addEventListener('contextmenu', (e) => {
+  e.preventDefault();
+  zoomAt(evCanvas(e), 2);
+});
+const centre = () => {
+  const r = frameRect();
+  return [r.x + r.w / 2, r.y + r.h / 2];
+};
+$('zoomIn').onclick = () => zoomAt(centre(), 0.5);
+$('zoomOut').onclick = () => zoomAt(centre(), 2);
 cOv.addEventListener('wheel', (e) => {
   e.preventDefault();
   zoomAt(evCanvas(e), e.deltaY < 0 ? 0.8 : 1.25);
@@ -574,6 +585,9 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') setTool('pan');
   if (e.key === 'Enter' && draft?.type === 'poly' && draft.pts.length > 2) (draft.pts.pop(), shapes.push(finishDraft()), (draft = null), afterEdit());
   if (e.key === 'f') $('fullscreen').click();
+  if (e.key === '+' || e.key === '=') zoomAt(centre(), 0.5);
+  if (e.key === '-') zoomAt(centre(), 2);
+  if (e.key === '0') $('zoomReset').click();
   if (e.key === ' ') (e.preventDefault(), $('snap').click());
   if (e.key === 'z' && (e.ctrlKey || e.metaKey) && shapes.length) (shapes.pop(), afterEdit());
 });
