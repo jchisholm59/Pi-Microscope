@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pi-Microscope</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand"><img src="icon.svg" alt=""><b>Pi-Microscope</b><span class="sub">HQ camera · IMX477</span></div>
+  <div class="hstat">
+    <span id="conn" class="pill bad">connecting…</span>
+    <span id="hExp" class="pill dim" title="Exposure time and analogue gain"></span>
+    <span id="hWb" class="pill dim" title="Colour temperature and white balance gains"></span>
+    <span id="hCal" class="pill dim" title="Active calibration"></span>
+    <span id="hJob" class="pill warn" hidden></span>
+  </div>
+</header>
+
+<main>
+  <section class="viewer-wrap">
+    <div class="toolbar" id="tools">
+      <span class="grp" id="toolBtns">
+        <button data-tool="pan" title="Pan and zoom (wheel zooms, drag pans, double-click zooms in)">✋</button>
+        <button data-tool="line" title="Measure a length">📏</button>
+        <button data-tool="poly" title="Measure a path (click points, double-click to finish)">〰</button>
+        <button data-tool="rect" title="Measure a rectangle (width, height, area)">▭</button>
+        <button data-tool="circle" title="Measure a circle (drag from the centre)">◯</button>
+        <button data-tool="angle" title="Measure an angle (three clicks: arm, vertex, arm)">∠</button>
+        <button data-tool="count" title="Count things (click each one)">✚</button>
+        <button data-tool="text" title="Add a label">T</button>
+        <button data-tool="cal" title="Calibrate: draw a line across a known distance">⚖</button>
+        <button data-tool="wb" title="White balance: drag over something white or grey">◻</button>
+        <button data-tool="roi" title="Set the focus-meter area">◎</button>
+      </span>
+      <span class="grp">
+        <button data-ov="cross" title="Crosshair">+</button>
+        <button data-ov="grid" title="Grid (calibrated spacing when a calibration is active)">#</button>
+        <button data-ov="scale" title="Scale bar">▬</button>
+        <button data-ov="peak" title="Focus peaking: highlight the sharp edges">✦</button>
+      </span>
+      <span class="grp">
+        <button id="freeze" title="Freeze the picture to measure on a still frame">❄ Freeze</button>
+        <button id="zoomReset" title="Whole field of view">⤢ Full view</button>
+        <button id="fullscreen" title="Full screen">⛶</button>
+        <button id="clearShapes" title="Remove the measurements">✖ Clear</button>
+      </span>
+      <span class="grp right" id="viewInfo"></span>
+    </div>
+    <div class="viewer" id="viewer">
+      <img id="live" alt="" draggable="false">
+      <canvas id="peak"></canvas>
+      <canvas id="ov"></canvas>
+      <div class="vbadge" id="vbadge"></div>
+      <div class="hint" id="hint"></div>
+    </div>
+    <div class="belowview">
+      <div class="focus">
+        <div class="flabel">Focus <b id="fVal">–</b><span class="muted" id="fPeak"></span></div>
+        <div class="fbar"><i id="fFill"></i><b id="fPeakMark"></b></div>
+        <canvas id="fSpark"></canvas>
+      </div>
+      <canvas id="hist" title="Brightness histogram"></canvas>
+      <div class="quick">
+        <button id="snap" class="pri" title="Save a 2 MP picture now (no interruption)">📷 Snap</button>
+        <button id="full" class="pri" title="Save a full 12 MP picture (live view pauses ~3 s)">📸 12 MP</button>
+        <button id="rec" title="Record video">⏺ Video</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="side">
+    <nav class="tabs" id="tabs">
+      <button data-tab="cam">Camera</button>
+      <button data-tab="cap">Capture</button>
+      <button data-tab="meas">Measure</button>
+      <button data-tab="gal">Gallery</button>
+    </nav>
+
+    <div class="tab" data-tab="cam">
+      <h3>Exposure</h3>
+      <div class="row"><label><input type="checkbox" id="ae"> Auto exposure</label>
+        <label>Metering <select id="metering"><option value="0">Centre</option><option value="1">Spot</option><option value="2">Average</option></select></label></div>
+      <div class="sl"><span>Compensation</span><input type="range" id="ev" min="-4" max="4" step="0.25"><b id="evV"></b></div>
+      <div class="sl"><span>Exposure</span><input type="range" id="exposure" min="0" max="1000" step="1"><b id="exposureV"></b></div>
+      <div class="sl"><span>Gain</span><input type="range" id="gain" min="1" max="16" step="0.1"><b id="gainV"></b></div>
+      <div class="row small muted" id="expInfo"></div>
+      <h3>White balance</h3>
+      <div class="row"><label><input type="checkbox" id="awb"> Auto</label>
+        <select id="awbMode"><option value="0">Auto</option><option value="1">Incandescent</option><option value="2">Tungsten</option><option value="3">Fluorescent</option><option value="4">Indoor</option><option value="5">Daylight</option><option value="6">Cloudy</option></select>
+        <button id="wbPick" title="Then drag over something white or grey in the picture">◻ Pick white</button></div>
+      <div class="sl"><span>Red gain</span><input type="range" id="gR" min="0.5" max="6" step="0.01"><b id="gRV"></b></div>
+      <div class="sl"><span>Blue gain</span><input type="range" id="gB" min="0.5" max="6" step="0.01"><b id="gBV"></b></div>
+      <h3>Image</h3>
+      <div class="sl"><span>Brightness</span><input type="range" id="brightness" min="-0.5" max="0.5" step="0.01"><b id="brightnessV"></b></div>
+      <div class="sl"><span>Contrast</span><input type="range" id="contrast" min="0" max="3" step="0.05"><b id="contrastV"></b></div>
+      <div class="sl"><span>Saturation</span><input type="range" id="saturation" min="0" max="3" step="0.05"><b id="saturationV"></b></div>
+      <div class="sl"><span>Sharpness</span><input type="range" id="sharpness" min="0" max="8" step="0.1"><b id="sharpnessV"></b></div>
+      <div class="row"><label>Noise reduction <select id="denoise"><option value="0">Off</option><option value="1">Fast</option><option value="2">High quality</option><option value="3">Minimal</option><option value="4">Zero-shutter-lag</option></select></label></div>
+      <div class="row"><label><input type="checkbox" id="hflip"> Mirror</label><label><input type="checkbox" id="vflip"> Flip</label>
+        <label>Stream <select id="quality"><option value="VERY_HIGH">Best</option><option value="HIGH">High</option><option value="MEDIUM">Medium (Wi-Fi)</option><option value="LOW">Low</option></select></label>
+        <label>FPS <select id="fps"><option>10</option><option>15</option><option>25</option><option>30</option><option>40</option></select></label></div>
+      <h3>Presets</h3>
+      <div class="row"><select id="presetSel" class="grow"></select><button id="presetLoad">Load</button><button id="presetSave">Save as…</button><button id="presetDel">🗑</button></div>
+      <div class="row"><button id="reset">Reset to defaults</button></div>
+    </div>
+
+    <div class="tab" data-tab="cap">
+      <h3>Focus stack <span class="muted">one sharp picture from many focus steps</span></h3>
+      <ol class="small muted steps">
+        <li>Focus on the nearest part of the subject.</li>
+        <li>Press <b>Start</b>, then turn the focus knob slowly and steadily until the farthest part has been sharp.</li>
+        <li>Press <b>Fuse</b>. Frames are kept only when the focus has moved, so pauses don't matter.</li>
+      </ol>
+      <div class="row"><button id="stackGo" class="pri">▶ Start</button><button id="stackFuse">⧉ Fuse</button><button id="stackCancel">Cancel</button><span id="stackInfo" class="muted"></span></div>
+      <div class="prog"><i id="stackProg"></i></div>
+      <h3>Pictures</h3>
+      <div class="row"><button id="snap2">📷 Snap 2 MP</button><button id="full2">📸 Full 12 MP</button><label><input type="checkbox" id="dng"> + raw DNG</label></div>
+      <h3>Video</h3>
+      <div class="row"><button id="rec2">⏺ Record video</button><span class="muted small">H.264 MP4, 1352×1014</span><span id="recInfo" class="muted"></span></div>
+      <h3>Time-lapse</h3>
+      <div class="row"><label>Every <input type="number" id="tlInt" value="10" min="1" step="1" style="width:5em"> s</label>
+        <label>Frames <input type="number" id="tlCount" value="0" min="0" style="width:5em"></label><span class="muted small">(0 = until stopped)</span>
+        <label><input type="checkbox" id="tlFull"> 12 MP</label></div>
+      <div class="row"><button id="tlGo">▶ Start time-lapse</button><span id="tlInfo" class="muted"></span></div>
+    </div>
+
+    <div class="tab" data-tab="meas">
+      <h3>Calibration <span class="muted">micrometres per pixel, one per lens zoom setting</span></h3>
+      <div class="row"><select id="calSel" class="grow"></select><button id="calDel">🗑</button></div>
+      <p class="small muted">Put a ruler (or stage micrometer) under the lens. Choose ⚖ <b>Calibrate</b> in the toolbar and draw a line along the scale: Pi-Microscope finds the tick spacing itself, or you type the length the line covers.</p>
+      <div class="row"><label>Tick spacing <select id="tickMm"><option value="1">1 mm ruler</option><option value="0.5">0.5 mm</option><option value="0.1">0.1 mm (stage micrometer)</option><option value="0.01">0.01 mm (stage micrometer)</option><option value="0.0254">1/1000 inch</option><option value="1.5875">1/16 inch</option></select></label></div>
+      <h3>Measurements <span class="muted" id="measCount"></span></h3>
+      <div id="measList" class="measlist"></div>
+      <div class="row"><button id="measCsv">⬇ CSV</button><button id="measSnap" class="pri" title="Save a 12 MP picture with these measurements">📸 Save with measurements</button></div>
+    </div>
+
+    <div class="tab" data-tab="gal">
+      <div class="row"><select id="galKind"><option value="">Everything</option><option value="snap">Snaps</option><option value="full">12 MP</option><option value="stack">Stacks</option><option value="video">Videos</option><option value="timelapse">Time-lapses</option></select>
+        <span class="muted" id="galInfo"></span></div>
+      <div id="gallery" class="gallery"></div>
+      <div id="galDetail" class="galdetail" hidden></div>
+    </div>
+  </section>
+</main>
+<div id="toast" class="toast" hidden></div>
+<script type="module" src="app.js"></script>
+</body>
+</html>
