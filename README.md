@@ -9,8 +9,8 @@ time-lapse and a gallery. Built for a C-mount zoom inspection microscope with a 
 ## What it does
 
 - **Live view** at ~25 fps of the sensor's **whole field of view** (2×2 binned mode), hardware MJPEG, low latency.
-  **Digital zoom on the sensor** (wheel to zoom, drag to pan, double-click to zoom in): the zoom crops the sensor, so
-  zooming in shows real detail instead of enlarged pixels.
+  **Digital zoom on the sensor**: the zoom crops the sensor, so zooming in shows real detail instead of enlarged
+  pixels (see *Zoom and pan* below).
 - **Camera controls**: auto or manual exposure (1/10 000 s to 2 s) and gain, exposure compensation and metering,
   auto or manual white balance with presets, **click-to-white-balance** (drag over something white or grey), brightness,
   contrast, saturation, sharpness, noise reduction, mirror / flip, stream quality and frame rate. **Presets** save a
@@ -32,6 +32,21 @@ time-lapse and a gallery. Built for a C-mount zoom inspection microscope with a 
   seconds, made into an MP4 at the end).
 - **Gallery**: thumbnails, open any picture in the viewer to zoom and measure it (with its own calibration), notes,
   downloads (original, with measurements, DNG, depth map), delete.
+
+## Zoom and pan
+
+| | Zoom in | Zoom out |
+|---|---|---|
+| Mouse wheel | scroll up | scroll down |
+| Mouse | double-click | right-click |
+| Toolbar | ＋ | － |
+| Keyboard | `+` | `-` |
+| Whole field of view | ⤢ Full view, or `0` | |
+
+Drag with the ✋ tool to pan. The wheel, double-click and right-click zoom around the point under the pointer; the
+buttons and keys around the centre. Right-click works with any tool selected. Live, the zoom is a sensor crop (up to
+25×); a gallery picture zooms in the browser (up to 50×). Other keys: `Esc` back to ✋, `Enter` finishes a path,
+`Ctrl+Z` removes the last measurement, `f` full screen, `Space` snaps a picture.
 
 ![Focus peaking on the ruler and coin edges](docs/peaking.png)
 
